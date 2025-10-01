@@ -331,8 +331,3 @@ main_menu
 
 ---
 
-If you want, I can:
-- produce a cleaned `shell_exercises.sh` file (downloadable),
-- convert this README into a PDF, or
-- expand the script to add input validation and better portability (e.g., replace `echo -e` with `printf`, validate numeric input, handle negative numbers or zero in `reverse_num`, etc.).
-
