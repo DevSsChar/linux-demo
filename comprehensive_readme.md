@@ -1012,3 +1012,595 @@ man pthread_cond_wait
 ---
 
 *For questions or issues, consult your lab instructor or system administrator.*
+
+COMPLETE CODE
+```c
+/*
+ * COMPLETE SOLUTIONS FOR ALL OS PRACTICAL PROBLEMS
+ * 
+ * This file contains solutions for:
+ * Q1: Process Management & Monitoring
+ * Q2: Thread-Safe Ticket Booking System
+ * 
+ * Compile each section separately or select from menu
+ * 
+ * COMPILATION:
+ * gcc solutions.c -o solutions -pthread
+ * 
+ * RUN:
+ * ./solutions
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <string.h>
+#include <stdbool.h>
+
+// ============================================================================
+// SOLUTION Q1: PROCESS MANAGEMENT - DATA PROCESSING SYSTEM
+// ============================================================================
+
+void log_with_time(const char *task, const char *msg) {
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    printf("[%02d:%02d:%02d] [%s] PID=%d: %s\n", 
+           t->tm_hour, t->tm_min, t->tm_sec, task, getpid(), msg);
+}
+
+// Simulate reading sensor files
+void read_sensor_data() {
+    log_with_time("READER", "Starting to read sensor files...");
+    sleep(2);  // Simulate file I/O
+    log_with_time("READER", "Successfully read 1000 sensor readings");
+}
+
+// Simulate data processing
+void process_data() {
+    log_with_time("PROCESSOR", "Starting data analysis...");
+    sleep(3);  // Simulate computation
+    log_with_time("PROCESSOR", "Processed data: Mean=25.3, StdDev=5.2");
+}
+
+// Simulate saving results
+void save_results() {
+    log_with_time("SAVER", "Saving results to output files...");
+    sleep(1);  // Simulate file write
+    log_with_time("SAVER", "Results saved successfully");
+}
+
+void solution_q1_process_management() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q1: PROCESS MANAGEMENT - DATA PROCESSING SYSTEM      ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("Simulating university research lab with 3 tasks:\n");
+    printf("1. Read sensor data\n");
+    printf("2. Process data\n");
+    printf("3. Save results\n\n");
+    printf("Monitor: ps aux | grep solutions\n\n");
+    
+    // TASK 1: Read sensor data
+    pid_t reader = fork();
+    if (reader == 0) {
+        read_sensor_data();
+        exit(0);
+    } else if (reader < 0) {
+        perror("Fork failed");
+        return;
+    }
+    
+    // SYNCHRONIZATION: Wait for reader to complete
+    int status;
+    waitpid(reader, &status, 0);
+    if (WIFEXITED(status)) {
+        printf("\n✓ Reader completed with status %d\n\n", WEXITSTATUS(status));
+    }
+    
+    // TASK 2: Process data (only after reading completes)
+    pid_t processor = fork();
+    if (processor == 0) {
+        process_data();
+        exit(0);
+    } else if (processor < 0) {
+        perror("Fork failed");
+        return;
+    }
+    
+    // SYNCHRONIZATION: Wait for processor
+    waitpid(processor, &status, 0);
+    if (WIFEXITED(status)) {
+        printf("\n✓ Processor completed with status %d\n\n", WEXITSTATUS(status));
+    }
+    
+    // TASK 3: Save results (only after processing completes)
+    pid_t saver = fork();
+    if (saver == 0) {
+        save_results();
+        exit(0);
+    } else if (saver < 0) {
+        perror("Fork failed");
+        return;
+    }
+    
+    // SYNCHRONIZATION: Wait for saver
+    waitpid(saver, &status, 0);
+    if (WIFEXITED(status)) {
+        printf("\n✓ Saver completed with status %d\n\n", WEXITSTATUS(status));
+    }
+    
+    printf("═══════════════════════════════════════════════════\n");
+    printf("✓ ALL TASKS COMPLETED SUCCESSFULLY\n");
+    printf("═══════════════════════════════════════════════════\n\n");
+}
+
+// ============================================================================
+// SOLUTION Q1 (PART 2): SYSTEM PROCESS MONITORING
+// ============================================================================
+
+void solution_q1_monitoring_guide() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q1: SYSTEM PROCESS MONITORING & CONTROL             ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("SCENARIO: Students ran CPU-intensive programs\n");
+    printf("TASK: Identify and terminate problematic processes\n\n");
+    
+    printf("═══ STEP 1: IDENTIFY HIGH CPU PROCESSES ═══\n");
+    printf("Commands:\n");
+    printf("  top                          # Real-time monitoring\n");
+    printf("  htop                         # Enhanced viewer\n");
+    printf("  ps aux --sort=-%cpu | head   # Sort by CPU\n");
+    printf("  ps aux --sort=-%mem | head   # Sort by memory\n\n");
+    
+    printf("═══ STEP 2: FILTER BY USER ═══\n");
+    printf("Commands:\n");
+    printf("  ps aux | grep student_name\n");
+    printf("  top -u student_name\n");
+    printf("  pgrep -u student_name\n\n");
+    
+    printf("═══ STEP 3: IDENTIFY PROCESS DETAILS ═══\n");
+    printf("Example output from 'ps aux':\n");
+    printf("USER   PID  %%CPU %%MEM    VSZ   RSS  STAT  COMMAND\n");
+    printf("john   1234  95.0  10.5  50000 20000  R     ./intensive_app\n");
+    printf("john   1235  80.2   5.3  30000 10000  R     python script.py\n\n");
+    
+    printf("PID = Process ID (use this to kill)\n");
+    printf("%%CPU = CPU usage percentage\n");
+    printf("%%MEM = Memory usage percentage\n");
+    printf("STAT = Process state (R=Running, S=Sleeping, Z=Zombie)\n\n");
+    
+    printf("═══ STEP 4: TERMINATE PROCESSES ═══\n");
+    printf("Commands:\n");
+    printf("  kill PID              # Graceful termination (SIGTERM)\n");
+    printf("  kill -9 PID           # Force kill (SIGKILL)\n");
+    printf("  kill -15 PID          # Same as 'kill PID'\n");
+    printf("  pkill process_name    # Kill by name\n");
+    printf("  killall process_name  # Kill all instances\n\n");
+    
+    printf("═══ STEP 5: ADJUST PRIORITY (Alternative) ═══\n");
+    printf("Commands:\n");
+    printf("  nice -n 10 ./program       # Start with lower priority\n");
+    printf("  renice +10 -p PID          # Lower priority of running process\n");
+    printf("  renice -5 -p PID           # Higher priority (needs sudo)\n\n");
+    
+    printf("═══ PRACTICAL EXAMPLE ═══\n");
+    printf("$ ps aux --sort=-%cpu | head -5\n");
+    printf("USER   PID  %%CPU\n");
+    printf("john   1234  95.0  <- Found problematic process!\n");
+    printf("\n");
+    printf("$ kill 1234           # Try graceful\n");
+    printf("$ sleep 5\n");
+    printf("$ ps aux | grep 1234  # Check if still running\n");
+    printf("$ kill -9 1234        # Force kill if needed\n\n");
+    
+    printf("Press Enter to continue...\n");
+    getchar();
+}
+
+// ============================================================================
+// SOLUTION Q2: THREAD-SAFE TICKET BOOKING SYSTEM
+// ============================================================================
+
+// TASK 1: WITHOUT SYNCHRONIZATION (RACE CONDITION)
+#define INITIAL_TICKETS 10
+int tickets_unsafe = INITIAL_TICKETS;
+
+void* book_without_sync(void* arg) {
+    int user_id = *(int*)arg;
+    
+    // RACE CONDITION: Multiple threads can read same value
+    if (tickets_unsafe > 0) {
+        printf("User %d: Sees %d tickets available\n", user_id, tickets_unsafe);
+        usleep(50000);  // Simulate processing delay
+        
+        tickets_unsafe--;  // UNSAFE: Multiple threads modify simultaneously
+        
+        printf("User %d: Booked! Says %d remaining\n", user_id, tickets_unsafe);
+    } else {
+        printf("User %d: Sold out\n", user_id);
+    }
+    
+    return NULL;
+}
+
+void solution_q2_task1_race_condition() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q2 TASK 1: WITHOUT SYNCHRONIZATION (RACE CONDITION) ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("Initial tickets: %d\n", INITIAL_TICKETS);
+    printf("Users trying to book: 15\n");
+    printf("Expected final tickets: 0\n\n");
+    
+    tickets_unsafe = INITIAL_TICKETS;  // Reset
+    
+    pthread_t threads[15];
+    int user_ids[15];
+    
+    // Create 15 threads (users) trying to book
+    for (int i = 0; i < 15; i++) {
+        user_ids[i] = i + 1;
+        pthread_create(&threads[i], NULL, book_without_sync, &user_ids[i]);
+    }
+    
+    // Wait for all threads
+    for (int i = 0; i < 15; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("\n═══════════════════════════════════════════════════\n");
+    printf("Final tickets: %d\n", tickets_unsafe);
+    if (tickets_unsafe < 0) {
+        printf("⚠ OVERBOOKING DETECTED! (Race Condition)\n");
+        printf("Actual bookings: %d (should be max 10)\n", INITIAL_TICKETS - tickets_unsafe);
+    }
+    printf("═══════════════════════════════════════════════════\n\n");
+}
+
+// TASK 2: WITH MUTEX (THREAD-SAFE)
+int tickets_safe = INITIAL_TICKETS;
+pthread_mutex_t ticket_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void* book_with_mutex(void* arg) {
+    int user_id = *(int*)arg;
+    
+    pthread_mutex_lock(&ticket_mutex);  // LOCK: Enter critical section
+    
+    if (tickets_safe > 0) {
+        printf("User %d: Checking... %d tickets available\n", 
+               user_id, tickets_safe);
+        usleep(50000);  // Simulate processing
+        
+        tickets_safe--;  // SAFE: Only one thread can execute this
+        
+        printf("User %d: ✓ Booked! Remaining: %d\n", 
+               user_id, tickets_safe);
+    } else {
+        printf("User %d: ✗ Sold out\n", user_id);
+    }
+    
+    pthread_mutex_unlock(&ticket_mutex);  // UNLOCK: Exit critical section
+    
+    return NULL;
+}
+
+void solution_q2_task2_mutex() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q2 TASK 2: WITH MUTEX (THREAD-SAFE)                 ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("Initial tickets: %d\n", INITIAL_TICKETS);
+    printf("Users trying to book: 15\n");
+    printf("Expected final tickets: 0 (no overbooking)\n\n");
+    
+    tickets_safe = INITIAL_TICKETS;  // Reset
+    
+    pthread_t threads[15];
+    int user_ids[15];
+    
+    for (int i = 0; i < 15; i++) {
+        user_ids[i] = i + 1;
+        pthread_create(&threads[i], NULL, book_with_mutex, &user_ids[i]);
+    }
+    
+    for (int i = 0; i < 15; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("\n═══════════════════════════════════════════════════\n");
+    printf("Final tickets: %d\n", tickets_safe);
+    if (tickets_safe == 0) {
+        printf("✓ SUCCESS: No overbooking (Thread-safe)\n");
+        printf("Exactly 10 tickets were booked\n");
+    }
+    printf("═══════════════════════════════════════════════════\n\n");
+    
+    pthread_mutex_destroy(&ticket_mutex);
+}
+
+// BONUS: WITH SEMAPHORE
+int tickets_sem = INITIAL_TICKETS;
+sem_t ticket_semaphore;
+
+void* book_with_semaphore(void* arg) {
+    int user_id = *(int*)arg;
+    
+    printf("User %d: Attempting to book...\n", user_id);
+    
+    sem_wait(&ticket_semaphore);  // Wait for resource
+    
+    if (tickets_sem > 0) {
+        printf("User %d: Processing... (%d available)\n", user_id, tickets_sem);
+        usleep(50000);
+        tickets_sem--;
+        printf("User %d: ✓ Success! Now %d left\n", user_id, tickets_sem);
+    } else {
+        printf("User %d: ✗ Failed\n", user_id);
+    }
+    
+    sem_post(&ticket_semaphore);  // Release resource
+    
+    return NULL;
+}
+
+void solution_q2_bonus_semaphore() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q2 BONUS: WITH SEMAPHORE (ALTERNATIVE SOLUTION)     ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    tickets_sem = INITIAL_TICKETS;
+    sem_init(&ticket_semaphore, 0, 1);  // Binary semaphore
+    
+    pthread_t threads[15];
+    int user_ids[15];
+    
+    for (int i = 0; i < 15; i++) {
+        user_ids[i] = i + 1;
+        pthread_create(&threads[i], NULL, book_with_semaphore, &user_ids[i]);
+    }
+    
+    for (int i = 0; i < 15; i++) {
+        pthread_join(threads[i], NULL);
+    }
+    
+    printf("\n═══════════════════════════════════════════════════\n");
+    printf("Final tickets: %d\n", tickets_sem);
+    printf("✓ Semaphore solution also thread-safe\n");
+    printf("═══════════════════════════════════════════════════\n\n");
+    
+    sem_destroy(&ticket_semaphore);
+}
+
+// ADVANCED: PARENT-CHILD COORDINATION WITH CONDITION VARIABLES
+int tickets_cond = INITIAL_TICKETS;
+bool data_validated = false;
+pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t condition = PTHREAD_COND_INITIALIZER;
+
+void* parent_validator(void* arg) {
+    sleep(2);  // Simulate validation processing
+    
+    pthread_mutex_lock(&cond_mutex);
+    
+    printf("\n[PARENT] Validating user credentials and payment...\n");
+    sleep(1);
+    
+    data_validated = true;
+    printf("[PARENT] ✓ Validation complete! Signaling child...\n\n");
+    
+    pthread_cond_signal(&condition);  // Wake up child
+    
+    pthread_mutex_unlock(&cond_mutex);
+    
+    return NULL;
+}
+
+void* child_booker(void* arg) {
+    int user_id = *(int*)arg;
+    
+    pthread_mutex_lock(&cond_mutex);
+    
+    printf("[CHILD %d] Waiting for parent validation...\n", user_id);
+    
+    // Wait for parent to validate
+    while (!data_validated) {
+        pthread_cond_wait(&condition, &cond_mutex);
+    }
+    
+    printf("[CHILD %d] ✓ Validation received! Processing booking...\n", user_id);
+    
+    if (tickets_cond > 0) {
+        tickets_cond--;
+        printf("[CHILD %d] ✓ Ticket booked! Remaining: %d\n", 
+               user_id, tickets_cond);
+    } else {
+        printf("[CHILD %d] ✗ No tickets available\n", user_id);
+    }
+    
+    pthread_mutex_unlock(&cond_mutex);
+    
+    return NULL;
+}
+
+void solution_q2_advanced_condition_variable() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║  Q2 ADVANCED: PARENT-CHILD THREAD COORDINATION       ║\n");
+    printf("║  Using Condition Variables                            ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n\n");
+    
+    printf("Scenario: Parent validates booking data\n");
+    printf("         Child waits and then books ticket\n\n");
+    
+    data_validated = false;  // Reset
+    pthread_t parent, child;
+    int user_id = 1;
+    
+    // Create child (will wait)
+    pthread_create(&child, NULL, child_booker, &user_id);
+    
+    // Create parent (will validate and signal)
+    pthread_create(&parent, NULL, parent_validator, NULL);
+    
+    pthread_join(parent, NULL);
+    pthread_join(child, NULL);
+    
+    printf("\n═══════════════════════════════════════════════════\n");
+    printf("✓ Parent-child coordination successful\n");
+    printf("Final tickets: %d\n", tickets_cond);
+    printf("═══════════════════════════════════════════════════\n\n");
+    
+    pthread_mutex_destroy(&cond_mutex);
+    pthread_cond_destroy(&condition);
+}
+
+// ============================================================================
+// MAIN MENU
+// ============================================================================
+
+void show_main_menu() {
+    printf("\n");
+    printf("╔════════════════════════════════════════════════════════╗\n");
+    printf("║     OS PRACTICAL - COMPLETE SOLUTIONS                 ║\n");
+    printf("╚════════════════════════════════════════════════════════╝\n");
+    printf("\n");
+    printf("Q1: PROCESS MANAGEMENT\n");
+    printf("  1. Data Processing System (fork, wait, synchronization)\n");
+    printf("  2. Process Monitoring Guide (ps, top, kill)\n");
+    printf("\n");
+    printf("Q2: THREAD SYNCHRONIZATION\n");
+    printf("  3. Task 1: Race Condition Demo (WITHOUT sync)\n");
+    printf("  4. Task 2: Mutex Solution (WITH sync)\n");
+    printf("  5. Bonus: Semaphore Solution\n");
+    printf("  6. Advanced: Condition Variables (Parent-Child)\n");
+    printf("\n");
+    printf("  7. Run ALL Q2 demos (compare solutions)\n");
+    printf("  0. Exit\n");
+    printf("\n");
+    printf("Enter choice: ");
+}
+
+int main() {
+    int choice;
+    
+    printf("\n");
+    printf("════════════════════════════════════════════════════\n");
+    printf("  OPERATING SYSTEM PRACTICAL SOLUTIONS\n");
+    printf("  Process Management & Thread Synchronization\n");
+    printf("════════════════════════════════════════════════════\n");
+    
+    while (1) {
+        show_main_menu();
+        scanf("%d", &choice);
+        getchar();  // Consume newline
+        
+        switch (choice) {
+            case 1:
+                solution_q1_process_management();
+                printf("\nPress Enter to continue...");
+                getchar();
+                break;
+                
+            case 2:
+                solution_q1_monitoring_guide();
+                break;
+                
+            case 3:
+                solution_q2_task1_race_condition();
+                printf("Press Enter to continue...");
+                getchar();
+                break;
+                
+            case 4:
+                solution_q2_task2_mutex();
+                printf("Press Enter to continue...");
+                getchar();
+                break;
+                
+            case 5:
+                solution_q2_bonus_semaphore();
+                printf("Press Enter to continue...");
+                getchar();
+                break;
+                
+            case 6:
+                solution_q2_advanced_condition_variable();
+                printf("Press Enter to continue...");
+                getchar();
+                break;
+                
+            case 7:
+                printf("\n=== RUNNING ALL Q2 DEMOS ===\n");
+                solution_q2_task1_race_condition();
+                sleep(2);
+                solution_q2_task2_mutex();
+                sleep(2);
+                solution_q2_bonus_semaphore();
+                sleep(2);
+                solution_q2_advanced_condition_variable();
+                printf("\nPress Enter to continue...");
+                getchar();
+                break;
+                
+            case 0:
+                printf("\n");
+                printf("════════════════════════════════════════════════════\n");
+                printf("  Thank you for using OS Practical Solutions!\n");
+                printf("════════════════════════════════════════════════════\n\n");
+                return 0;
+                
+            default:
+                printf("\n⚠ Invalid choice. Please try again.\n");
+        }
+    }
+    
+    return 0;
+}
+
+/*
+ * ═══════════════════════════════════════════════════════════════
+ * COMPILATION & EXECUTION GUIDE
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * COMPILE:
+ *   gcc solutions.c -o solutions -pthread -Wall
+ * 
+ * RUN:
+ *   ./solutions
+ * 
+ * MONITOR (in separate terminal):
+ *   watch -n 1 'ps aux | grep solutions'
+ *   top -p $(pgrep solutions)
+ * 
+ * ═══════════════════════════════════════════════════════════════
+ * KEY CONCEPTS DEMONSTRATED
+ * ═══════════════════════════════════════════════════════════════
+ * 
+ * Q1: Process Management
+ *   ✓ fork() - Creating child processes
+ *   ✓ wait()/waitpid() - Process synchronization
+ *   ✓ Sequential execution control
+ *   ✓ Process monitoring with ps/top
+ *   ✓ Process termination with kill
+ * 
+ * Q2: Thread Synchronization
+ *   ✓ Race conditions (what goes wrong)
+ *   ✓ Mutex locks (pthread_mutex_t)
+ *   ✓ Semaphores (sem_t)
+ *   ✓ Condition variables (pthread_cond_t)
+ *   ✓ Critical section protection
+ *   ✓ Thread-safe counter operations
+ * 
+ * ═══════════════════════════════════════════════════════════════
+ */
+```
